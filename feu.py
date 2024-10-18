@@ -46,8 +46,8 @@ def run():
         for _ in range(10):
             try:
                 print("Try reading AM2320")
-                temperature = temp_sensor.get_temperature()
-                print(temperature)
+                humidity, temperature = temp_sensor.get_both()
+                print(temperature, humidity)
                 go_publish = True
                 break
             except:
@@ -56,15 +56,22 @@ def run():
                 continue
 
         if go_publish:
-            print("Publish temperature")
             device_topic = device.get_device_topic()
 
-            # Publish the total consumed power
+            print("Publish temperature")
             topic = '/'.join([
                 device_topic,
                 'temperature',
             ])
             client.publish(topic, temperature)
+            client.loop()
+
+            print("Publish humidity")
+            topic = '/'.join([
+                device_topic,
+                'humidity',
+            ])
+            client.publish(topic, humidity)
             client.loop()
             
         time.sleep(5)
