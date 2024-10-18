@@ -2,7 +2,6 @@
 import time
 from smbus2 import SMBus, i2c_msg
 
-
 class AM2320:
     DEVICE_ADDRESS = 0x5C
     def __init__(self):
@@ -51,6 +50,10 @@ class AM2320:
 
         self.bus.i2c_rdwr(read_request)
         data = list(read_request)
+
+        if data[0] != 0x03:
+            raise Exception("Read issue")
+
         self._check_crc(data)
 
         ret = (data[2]*255 + data[3]) / 10
@@ -60,3 +63,7 @@ class AM2320:
     def get_humidity(self):
         pass
 
+if __name__ == '__main__':
+    dev = AM2320()
+    temp = dev.get_temperature()
+    print(temp)
