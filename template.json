@@ -1,0 +1,23 @@
+{
+    "device": {
+        "identifiers":"{device_id}",
+        "manufacturer":"cdtx",
+        "model":"python-air-stat"
+    },
+    "entities": [
+        {
+            "name":"temperature",
+            "unique_id":"{entity_id}",
+            "component":"sensor",
+            "state_topic":"{device_topic}/temperature",
+            "unit_of_measurement":"°C"
+        },
+        {
+            "name":"humidity",
+            "unique_id":"{entity_id}",
+            "component":"sensor",
+            "state_topic":"{device_topic}/humidity",
+            "unit_of_measurement":"%"
+        }
+    ]
+}

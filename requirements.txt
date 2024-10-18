@@ -1,1 +1,2 @@
+paho-mqtt
 smbus2==0.4.3
