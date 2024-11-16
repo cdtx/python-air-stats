@@ -18,6 +18,20 @@
             "component":"sensor",
             "state_topic":"{device_topic}/humidity",
             "unit_of_measurement":"%"
+        },
+        {
+            "name":"TVOC",
+            "unique_id":"{entity_id}",
+            "component":"sensor",
+            "state_topic":"{device_topic}/tvoc",
+            "unit_of_measurement":"ppb"
+        },
+        {
+            "name":"eCO2",
+            "unique_id":"{entity_id}",
+            "component":"sensor",
+            "state_topic":"{device_topic}/eco2",
+            "unit_of_measurement":"ppm"
         }
     ]
 }
