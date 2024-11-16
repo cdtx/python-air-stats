@@ -66,6 +66,7 @@ class MQTTDevice:
         # sgp30 read values
         # Initialized to None so the publish method
         # knows if sgp30 init is done
+        self.sgp30 = NonBlockingSGP30()
         self.tvoc = None
         self.eco2 = None
 
@@ -75,13 +76,12 @@ class MQTTDevice:
             await asyncio.sleep(time_s)
 
     async def refresh_sgp30(self):
-        sensor = NonBlockingSGP30()
         print('SGP30 start measurement')
-        await sensor.start_measurement()
+        await self.sgp30.start_measurement()
 
         while True:
             print('SGP30 get air quality')
-            ret = sensor.get_air_quality()
+            ret = self.sgp30.get_air_quality()
             self.tvoc = ret.total_voc
             self.eco2 = ret.equivalent_co2
             await asyncio.sleep(1)
@@ -107,6 +107,9 @@ class MQTTDevice:
 
             if go_publish:
                 device_topic = self.device.get_device_topic()
+
+                # Push measured humidy from am2320 to the sgp30
+                self.sgp30.set_humidity(humidity)
 
                 print("Publish temperature")
                 topic = '/'.join([
