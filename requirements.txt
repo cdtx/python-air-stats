@@ -1,3 +1,4 @@
 git+https://github.com/cdtx/pymqtt_hass@master#egg=pymqtt_hass
 aiomqtt
 smbus2==0.4.3
+pimoroni-sgp30

@@ -7,6 +7,7 @@ import aiomqtt
 from pymqtt_hass.items import Device
 
 from am2320 import AM2320
+from sgp30 import SGP30
 
 
 current_folder = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +26,33 @@ def get_config():
 
     return ret
 
+class NonBlockingSGP30(SGP30):
+    ''' Override the start_measurement method
+        to make it release the async loop every time it waits
+        before init is finished (15s)
+    '''
+    async def start_measurement(self, run_while_waiting=None):
+        """Start air quality measurement on the SGP30.
+
+        The first 15 readings are discarded so this command will block for 15s.
+
+        :param run_while_waiting: Function to call for every discarded reading.
+
+        """
+        self.command('init_air_quality')
+        testsamples = 0
+        while True:
+            # Discard the initialisation readings as per page 8/15 of the datasheet
+            eco2, tvoc = self.command('measure_air_quality')
+            # The first 15 readings should return as 400, 0 so abort when they change
+            # Break after 20 test samples to avoid a potential infinite loop
+            if eco2 != 400 or tvoc != 0 or testsamples >= 20:
+                break
+            if callable(run_while_waiting):
+                run_while_waiting()
+            await asyncio.sleep(1.0)
+            testsamples += 1
+
 class MQTTDevice:
 
     def __init__(self):
@@ -35,14 +63,35 @@ class MQTTDevice:
 
         self.boost_status = 0
 
+        # sgp30 read values
+        # Initialized to None so the publish method
+        # knows if sgp30 init is done
+        self.tvoc = None
+        self.eco2 = None
+
     async def periodic(self, time_s):
         while True:
             self.event_refresh.set()
             await asyncio.sleep(time_s)
 
+    async def refresh_sgp30(self):
+        sensor = NonBlockingSGP30()
+        print('SGP30 start measurement')
+        await sensor.start_measurement()
+
+        while True:
+            print('SGP30 get air quality')
+            ret = sensor.get_air_quality()
+            self.tvoc = ret.total_voc
+            self.eco2 = ret.equivalent_co2
+            await asyncio.sleep(1)
+
     async def publisher(self):
+
         temp_sensor = AM2320()
         while True:
+
+            # Read and publish am2320 values
             go_publish = False
             for _ in range(10):
                 try:
@@ -72,6 +121,22 @@ class MQTTDevice:
                     'humidity',
                 ])
                 await self.client.publish(topic, humidity)
+
+            # Publish sgp30 values
+            if self.tvoc != None:
+                print("Publish tvoc")
+                topic = '/'.join([
+                    device_topic,
+                    'tvoc',
+                ])
+                await self.client.publish(topic, self.tvoc)
+            if self.eco2 != None:
+                print("Publish eco2")
+                topic = '/'.join([
+                    device_topic,
+                    'eco2',
+                ])
+                await self.client.publish(topic, self.eco2)
 
             # Block until event_refresh in fired
             await self.event_refresh.wait()
@@ -106,13 +171,19 @@ class MQTTDevice:
 
             self.event_refresh = asyncio.Event(loop=loop) 
 
-            publish_tk = loop.create_task(self.publisher())
+            publish_tk = loop.create_task(
+                self.publisher()
+            )
             period_normal_tk = loop.create_task(
                 self.periodic(60)
+            )
+            refresh_sgp30_tk = loop.create_task(
+                self.refresh_sgp30()
             )
 
             await publish_tk
             await period_normal_tk
+            await refresh_sgp30_tk
 
 if __name__ == '__main__':
     asyncio.run(MQTTDevice().main())
