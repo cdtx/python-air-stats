@@ -19,6 +19,8 @@ def get_config():
     config = configparser.ConfigParser()
     config.read(os.path.join(current_folder, CONFIG_FILE))
 
+    ret['has_SGP30'] = config.getboolean('SYSTEM', 'SGP30', fallback=False)
+
     ret['MQTT_HOST'] = config.get('MQTT', 'HOST')
     ret['MQTT_PORT'] = config.getint('MQTT', 'PORT', fallback=1883)
     ret['MQTT_USERNAME'] = config.get('MQTT', 'USERNAME')
@@ -108,8 +110,9 @@ class MQTTDevice:
             if go_publish:
                 device_topic = self.device.get_device_topic()
 
-                # Push measured humidy from am2320 to the sgp30
-                self.sgp30.set_humidity(humidity)
+                if self.config['has_SGP30']:
+                    # Push measured humidy from am2320 to the sgp30
+                    self.sgp30.set_humidity(humidity)
 
                 print("Publish temperature")
                 topic = '/'.join([
@@ -125,21 +128,22 @@ class MQTTDevice:
                 ])
                 await self.client.publish(topic, humidity)
 
-            # Publish sgp30 values
-            if self.tvoc != None:
-                print("Publish tvoc")
-                topic = '/'.join([
-                    device_topic,
-                    'tvoc',
-                ])
-                await self.client.publish(topic, self.tvoc)
-            if self.eco2 != None:
-                print("Publish eco2")
-                topic = '/'.join([
-                    device_topic,
-                    'eco2',
-                ])
-                await self.client.publish(topic, self.eco2)
+            if self.config['has_SGP30']:
+                # Publish sgp30 values
+                if self.tvoc != None:
+                    print("Publish tvoc")
+                    topic = '/'.join([
+                        device_topic,
+                        'tvoc',
+                    ])
+                    await self.client.publish(topic, self.tvoc)
+                if self.eco2 != None:
+                    print("Publish eco2")
+                    topic = '/'.join([
+                        device_topic,
+                        'eco2',
+                    ])
+                    await self.client.publish(topic, self.eco2)
 
             # Block until event_refresh in fired
             await self.event_refresh.wait()
@@ -180,13 +184,15 @@ class MQTTDevice:
             period_normal_tk = loop.create_task(
                 self.periodic(60)
             )
-            refresh_sgp30_tk = loop.create_task(
-                self.refresh_sgp30()
-            )
+            if self.config['has_SGP30']:
+                refresh_sgp30_tk = loop.create_task(
+                    self.refresh_sgp30()
+                )
 
             await publish_tk
             await period_normal_tk
-            await refresh_sgp30_tk
+            if self.config['has_SGP30']:
+                await refresh_sgp30_tk
 
 if __name__ == '__main__':
     asyncio.run(MQTTDevice().main())

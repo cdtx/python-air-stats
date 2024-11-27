@@ -6,7 +6,7 @@ Read air quality sensors with python and push to MQTT for home assistant (with d
 
 For temperature and humidity
 
-# SGP30
+## SGP30
 
 For TVOC and eCO2
 
@@ -21,3 +21,16 @@ systemctl daemon-reload
 systemctl start airstats
 ```
 
+## Configure
+
+``` text
+[System]
+AM2320 = True|False
+SGP30 = True|False
+
+[MQTT]
+HOST =
+PORT = 
+USERNAME = 
+PASSWORD = 
+```
