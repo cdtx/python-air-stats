@@ -93,6 +93,10 @@ class MQTTDevice:
         temp_sensor = AM2320()
         while True:
 
+            # Always send discovery, because home assistant forgets devices
+            # every time it starts
+            await self.send_discovery()
+
             # Read and publish am2320 values
             go_publish = False
             for _ in range(10):
@@ -173,8 +177,6 @@ class MQTTDevice:
             self.client = client
 
             self.device = Device(self.client, os.path.join(current_folder, PYMQTT_HASS_CONFIG_FILE))
-
-            await self.send_discovery()
 
             self.event_refresh = asyncio.Event(loop=loop) 
 
