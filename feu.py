@@ -82,7 +82,7 @@ class MQTTDevice:
         await self.sgp30.start_measurement()
 
         while True:
-            print('SGP30 get air quality')
+            # print('SGP30 get air quality')
             ret = self.sgp30.get_air_quality()
             self.tvoc = ret.total_voc
             self.eco2 = ret.equivalent_co2
