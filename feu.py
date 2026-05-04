@@ -132,22 +132,22 @@ class MQTTDevice:
                 ])
                 await self.client.publish(topic, humidity)
 
-            if self.config['has_SGP30']:
-                # Publish sgp30 values
-                if self.tvoc != None:
-                    print("Publish tvoc")
-                    topic = '/'.join([
-                        device_topic,
-                        'tvoc',
-                    ])
-                    await self.client.publish(topic, self.tvoc)
-                if self.eco2 != None:
-                    print("Publish eco2")
-                    topic = '/'.join([
-                        device_topic,
-                        'eco2',
-                    ])
-                    await self.client.publish(topic, self.eco2)
+                if self.config['has_SGP30']:
+                    # Publish sgp30 values
+                    if self.tvoc != None:
+                        print("Publish tvoc")
+                        topic = '/'.join([
+                            device_topic,
+                            'tvoc',
+                        ])
+                        await self.client.publish(topic, self.tvoc)
+                    if self.eco2 != None:
+                        print("Publish eco2")
+                        topic = '/'.join([
+                            device_topic,
+                            'eco2',
+                        ])
+                        await self.client.publish(topic, self.eco2)
 
             # Block until event_refresh in fired
             await self.event_refresh.wait()
